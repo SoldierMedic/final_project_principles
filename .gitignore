@@ -2,8 +2,10 @@
 *.swp
 
 # Environments
+.DS_Store
 googleuser.json
 .env
+/public/.DS_Store
 .venv
 env/
 venv/
