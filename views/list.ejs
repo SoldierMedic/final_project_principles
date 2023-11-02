@@ -1,0 +1,222 @@
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Bootstrap CSS -->
+    <%- include('partials/metatags') %>
+    <link href="/css/list.css" rel="stylesheet">
+    <title>Restaurant</title>
+</head>
+<body>
+    <%- include('partials/navbar') %>
+    <div class="container my-5">
+        <div class="row">
+            <div class="col-12">
+                <h1>Your current city is: <span id="city"></span></h1>
+                <h2>Your ZIP code is: <span id="zip"></span></h2>
+                <br>
+                <h1>Restaurant</h1>
+            </div>
+            <h1> </h1>
+            <table>
+                <tbody id="table-body">
+                </tbody>
+            </table>
+            <h2 class="mt-4">Suggestion</h2>
+            <div id="suggestion"></div>
+        </div>
+    </div>
+
+
+    <script>
+        //Get City
+		let userCity = '';
+        let userZip = '';
+        var rests = [];
+
+        let iClass = 'bi bi-heart'
+
+		// Get user's current location (city)
+		const getPosition = () => {
+			return new Promise((resolve, reject) => {
+				if (navigator.geolocation) {
+					navigator.geolocation.getCurrentPosition(resolve, reject);
+				} else {
+					reject('Geolocation is not supported by this browser.');
+				}
+			});
+		}
+		// Show user's current location (city) on the page and store it in a variable
+        function showPosition(position) {
+			const lat = position.coords.latitude;
+			const lng = position.coords.longitude;
+			const geocoder = new google.maps.Geocoder();
+			const latlng = new google.maps.LatLng(lat, lng);
+
+			return new Promise((resolve, reject) => {
+				geocoder.geocode({'location': latlng}, function(results, status) {
+					if (status === 'OK') {
+						if (results[0]) {
+							const cityComponent = results[0].address_components.find(comp => comp.types.includes('locality'));
+							const zipComponent = results[0].address_components.find(comp => comp.types.includes('postal_code'));
+							const city = cityComponent ? cityComponent.long_name : '';
+							const zip = zipComponent ? zipComponent.long_name : '';
+							document.getElementById("city").innerHTML = city;
+							document.getElementById("zip").innerHTML = zip;
+							userCity = city;
+							userZip = zip;
+							resolve();
+						} else {
+							reject('No results found');
+						}
+					} else {
+						reject('Geocoder failed due to: ' + status);
+					}
+				});
+			});
+		}
+
+
+        getPosition().then(showPosition).then(() => {
+		console.log('User city:', userCity);
+        console.log('User ZIP code:', userZip);
+        const url = 'http://localhost:8080/review';
+        const data = {
+          city: userCity +" "+userZip,
+          food: '<%= food %>'
+        };
+  
+        fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(data)
+        })
+          .then(response => response.json())
+          .then(data => populateTable(data))
+          .catch(error => console.error(error));		
+        
+        }).catch((error) => {
+			console.error(error);
+		});
+        function populateTable(jsonArray) {
+            const tableBody = document.getElementById('table-body');
+            const suggestionDiv = document.getElementById('suggestion');
+            let suggestionText = '';
+        
+            var rowNumber=0;
+            jsonArray.forEach(item => {
+                if (item.hasOwnProperty('suggestion')) {
+                    suggestionText = item.suggestion;
+                } else {
+                    rests.push(item)
+                    const row = document.createElement('tr');
+                    const firstReview = item.reviews && item.reviews[0] ? item.reviews[0].text : 'No reviews available';
+                    const stars = item.rating ? `<li class="list-inline-item m-0"><i class="fa fa-star text-success"></i></li>`.repeat(Math.floor(item.rating)) : '';
+                    const emptyStars = 5 - Math.floor(item.rating);
+                    const emptyStarTags = emptyStars > 0 ? `<li class="list-inline-item m-0"><i class="fa fa-star-o text-gray"></i></li>`.repeat(emptyStars) : '';
+        
+                    const otherReviews = item.reviews && item.reviews.slice(1);
+                    const otherReviewsHTML = `<div class="more-reviews d-none">${otherReviews.map(review => `<p class="font-italic text-muted mb-3">${review.text}</p>`).join('')}</div>`;
+                    row.innerHTML = `
+                    <td>
+                        <ul class="list-group">
+                            <li class="list-group-item">
+                                <div class="row p-3">
+                                    <div class="col-lg-8">
+                                        <div class="media align-items-lg-center flex-column flex-lg-row">
+                                            <div class="media-body">
+                                                <h5 class="mt-0 font-weight-bold mb-2">${item.name}</h5>
+                                                <p class="font-italic text-muted mb-3 first-review">${firstReview}</p>
+                                                ${otherReviewsHTML}
+                                                <div class="d-flex align-items-center justify-content-between mt-1">
+                                                    <h6 class="font-weight-bold my-2">${item.location.address1}</h6>
+                                                    <ul class="list-inline small">
+                                                        ${stars}
+                                                        ${emptyStarTags}
+                                                    </ul>
+                                                </div>
+                                                <button class="btn btn-sm btn-outline-secondary mt-2 show-more-reviews">Show more reviews</button><br><br>
+                                                
+                                                <button onclick="add(${rowNumber})"><i class="${iClass}" id="i${rowNumber}"></i></button>
+
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-4 d-none d-lg-block">
+                                        <div class="image-container">
+                                            <img src="${item.image_url}" alt="${item.name}" class="restaurant-image review-image rounded">
+                                        </div>
+                                    </div>
+                                </div>
+                            </li>
+                        </ul>
+                    </td>
+                    
+                    `;
+                    rowNumber++;
+                    tableBody.appendChild(row);
+
+                    <!--   <button onclick="add(${rowNumber})"><i class="bi bi-heart" id="i${rowNumber}"></i></button>  -->
+                }
+            });
+        
+            // Add suggestion text after the table
+            suggestionDiv.innerHTML = suggestionText;
+        
+            // Add event listeners to the "Show more reviews" buttons
+            document.querySelectorAll('.show-more-reviews').forEach(button => {
+                button.addEventListener('click', () => {
+                    const parent = button.parentElement;
+                    parent.querySelectorAll('.more-reviews').forEach(review => {
+                        review.classList.toggle('d-none');
+                    });
+        
+                    if (button.textContent === 'Show more reviews') {
+                        button.textContent = 'Hide reviews';
+                    } else {
+                        button.textContent = 'Show more reviews';
+                    }
+                });
+            });
+        }
+
+        /*async function checkFAV() {
+
+           // bi bi-heart
+           // bi bi-heart-fill
+           loggedUser.businesses.find(element => element.alias === "");
+
+        }
+        */
+
+        async function  add(rowNumber) {
+            const url = '/addfavorites';
+              console.log(rests[rowNumber])
+              fetch(url, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(rests[rowNumber])
+              })
+                .then(response => response)
+                //.then(data => populateTable(data))
+                .catch(error => console.error(error));		
+              
+          
+               $(`#i${rowNumber}`).removeClass('bi bi-heart')
+               $(`#i${rowNumber}`).addClass('bi bi-heart-fill')
+               //<i class="fa-solid fa-heart"></i>
+              //console.log(rests[rowNumber])
+
+              
+            
+            }
+        
+    </script>
+    <!-- Include the Google Maps JavaScript API with a callback function -->
+	<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCHu5SQVrfI7EVAz7zSz3pyPSPJZUqUo_I&callback=initMap"></script>
+
+</body>

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Get User Location</title>
+	<style>
+		h1 {
+			text-align: center;
+		}
+	</style>
+</head>
+<body>
+	<h1>Your current city is: <span id="city"></span></h1>
+
+	<script>
+		// Get user's current location (city)
+		if (navigator.geolocation) {
+			navigator.geolocation.getCurrentPosition(showPosition);
+		} else {
+			alert("Geolocation is not supported by this browser.");
+		}
+
+		// Show user's current location (city) on the page
+		function showPosition(position) {
+			const lat = position.coords.latitude;
+			const lng = position.coords.longitude;
+			const geocoder = new google.maps.Geocoder();
+			const latlng = new google.maps.LatLng(lat, lng);
+
+			geocoder.geocode({'location': latlng}, function(results, status) {
+				if (status === 'OK') {
+					if (results[0]) {
+						const city = results[0].address_components.find(comp => comp.types.includes('locality')).long_name;
+						document.getElementById("city").innerHTML = city;
+					} else {
+						alert('No results found');
+					}
+				} else {
+					alert('Geocoder failed due to: ' + status);
+				}
+			});
+		}
+	</script>
+
+	<!-- Include the Google Maps JavaScript API with a callback function -->
+	<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCHu5SQVrfI7EVAz7zSz3pyPSPJZUqUo_I&callback=initMap"></script>
+
+</body>
+</html>

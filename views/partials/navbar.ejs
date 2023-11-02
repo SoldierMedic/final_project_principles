@@ -1,0 +1,56 @@
+<navbar
+                id="navbar-spy" class="navbar navbar-expand-lg navbar-dark bg-warning fixed-top ">
+                <!-- <i class="fas fa-terminal"></i> -->
+                <div class="container ">
+                    <a href="./index">
+                        <div class="navbar-brand">
+                            <span class="material-symbols-outlined">
+                                fastfood
+                            </span>
+                        </div>
+                    </a>
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mynavbar" aria-controls="mynavbar" aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div
+                        class="collapse navbar-collapse" id="mynavbar">
+                        <!-- mb-2 mb-lg-0   mb-lg-0-->
+                        <ul class="navbar-nav ms-auto ">
+                            <li class="nav-item">
+                                <a href="#" class="nav-link" onclick="logoutUser()">Logout</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="/search" class="nav-link " aria-current="page">Search
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                              <a href="/favorites" class="nav-link ">Favorites</a>
+                          </li>
+                            <li class="nav-item">
+                                <a href="/profile" class="nav-link active"><%= loggedUser.firstname %></a>
+                            </li>
+                            
+
+                            <li class="nav-item">
+                                <a href="#" class="nav-link "></a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </navbar>
+
+            <script>
+                async function logoutUser() {
+                  const url = '/logout';
+                  try {
+                    const response = await fetch(url, { method: 'GET' });
+                    if (response.ok) {
+                      window.location.href = '/'; // Redirect user to homepage or desired location after successful logout
+                    } else {
+                      console.error('Error logging out', response.status, response.statusText);
+                    }
+                  } catch (error) {
+                    console.error('Error logging out', error);
+                  }
+                }
+              </script>

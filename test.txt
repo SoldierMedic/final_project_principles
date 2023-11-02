@@ -1,0 +1,124 @@
+const express = require("express");
+const admin = require("firebase-admin");
+const yelp = require("yelp-fusion");
+const swaggerUi = require("swagger-ui-express");
+const swaggerJSDoc = require("swagger-jsdoc");
+const dotenv = require("dotenv");
+dotenv.config();
+const User = require('./db/Model');
+const mongoose = require('mongoose');
+mongoose.set('strictQuery', true);
+
+global.loggedUser;
+
+//Jeff
+const client = yelp.client(
+  "OPMavrf9yZMFZEcG-pmFNnwFL6z9SXMJzxXhKfHUjiSQyEYBND1HrGUwCbSrBdfQpwDpVck3OZkpMgeyUrE3sIitQrSrc7W9zZhaxqi-CnukwZHaVNdHT1_TrpUrZHYx"
+);
+
+const { Configuration, OpenAIApi } = require("openai");
+const configuration = new Configuration({
+  apiKey: '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',
+});
+const openai = new OpenAIApi(configuration);
+
+const PORT = process.env.PORT || 8080;
+const serviceAccount = require("./serviceAccountKey.json");
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+});
+
+const app = express();
+
+app.set("view engine", "ejs");
+app.use(express.static(__dirname + "/public"));
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+app.engine(".html", require("ejs").renderFile);
+
+const swaggerOptions = {
+  definition: {
+    openapi: "3.0.0",
+    info: {
+      title: "My API",
+      version: "1.0.0",
+      description: "A sample API",
+    },
+    servers: [
+      {
+        url: `http://localhost:${PORT}`,
+        description: "Local server",
+      },
+    ],
+  },
+  apis: ["./index.js"],
+};
+
+const swaggerSpec = swaggerJSDoc(swaggerOptions);
+
+app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+/**
+ * @swagger
+ * /index:
+ *   get:
+ *     description: Renders the index page
+ *     responses:
+ *       200:
+ *         description: Successfully rendered the index page
+ */
+app.get("/index", (req, res) => {
+  if (global.loggedUser) {
+    res.render("index");
+  }
+  else {
+    res.redirect('/')
+  }
+});
+
+/**
+ * @swagger
+ * /:
+ *   get:
+ *     description: Renders the signup page
+ *     responses:
+ *       200:
+ *         description: Successfully rendered the signup page
+ */
+app.get("/", (req, res) => {
+  res.render("signup");
+});
+
+/**
+ * @swagger
+ * /loc:
+ *   get:
+ *     description: Renders the location page
+ *     responses:
+ *       200:
+ *         description: Successfully rendered the location page
+ */
+app.get("/loc", (req, res) => {
+  res.render("location");
+});
+
+/**
+ * @swagger
+ * /profile:
+ *   get:
+ *     description: Renders the profile page
+ *     responses:
+ *       200:
+ *         description: Successfully rendered the profile page
+ */
+app.get("/profile", (req, res) => {
+  if (global.loggedUser) {
+    res.render("profile");
+  }
+  else {
+    res.redirect('/')
+  }
+});
+
+

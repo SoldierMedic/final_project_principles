@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <%- include('partials/metatags') %>
+    <link href="/css/list.css" rel="stylesheet">
+    <title>Favorites</title>
+</head>
+<body>
+    <%- include('partials/navbar') %>
+
+    <div class="container my-5">
+        <div class="row">
+            <div class="col-12">
+                <br>
+                <div>
+                    <h1>Favorites Resturants List</h1>
+                </div>
+            </div>
+            <h1> </h1>
+            <table>
+                <tbody id="table-body">
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+</body>
+
+<script>
+    var rests = [];
+
+    const url = 'http://localhost:8080/getfavlist';
+        fetch(url, {
+          method: 'get'
+        })
+          .then(response => response.json())
+          .then(data => populateTable(data))
+          .catch(error => console.error(error));		
+        function populateTable(jsonArray) {
+            const tableBody = document.getElementById('table-body');        
+            var rowNumber=0;
+            jsonArray.forEach(item => {
+                    rests.push(item)
+                    const row = document.createElement('tr');
+                    const firstReview = item.reviews && item.reviews[0] ? item.reviews[0].text : 'No reviews available';
+                    const stars = item.rating ? `<li class="list-inline-item m-0"><i class="fa fa-star text-success"></i></li>`.repeat(Math.floor(item.rating)) : '';
+                    const emptyStars = 5 - Math.floor(item.rating);
+                    const emptyStarTags = emptyStars > 0 ? `<li class="list-inline-item m-0"><i class="fa fa-star-o text-gray"></i></li>`.repeat(emptyStars) : '';
+        
+                    const otherReviews = item.reviews && item.reviews.slice(1);
+                    const otherReviewsHTML = `<div class="more-reviews d-none">${otherReviews.map(review => `<p class="font-italic text-muted mb-3">${review.text}</p>`).join('')}</div>`;
+                    row.innerHTML = `
+                    <td>
+                        <ul class="list-group">
+                            <li class="list-group-item">
+                                <div class="row p-3">
+                                    <div class="col-lg-8">
+                                        <div class="media align-items-lg-center flex-column flex-lg-row">
+                                            <div class="media-body">
+                                                <h5 class="mt-0 font-weight-bold mb-2">${item.name}</h5>
+                                                <p class="font-italic text-muted mb-3 first-review">${firstReview}</p>
+                                                ${otherReviewsHTML}
+                                                <div class="d-flex align-items-center justify-content-between mt-1">
+                                                    <h6 class="font-weight-bold my-2">$PLACEHOLDER_TEXT</h6>
+                                                    <ul class="list-inline small">
+                                                        ${stars}
+                                                        ${emptyStarTags}
+                                                    </ul>
+                                                </div>
+                                                <button class="btn btn-sm btn-outline-secondary mt-2 show-more-reviews">Show more reviews</button><br><br>
+                                                <button onclick="Delete(${rowNumber})"><i class="bi bi-trash id="i${rowNumber}"></i></button>
+
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-4 d-none d-lg-block">
+                                        <div class="image-container">
+                                            <img src="${item.image_url}" alt="${item.name}" class="restaurant-image review-image rounded">
+                                        </div>
+                                    </div>
+                                </div>
+                            </li>
+                        </ul>
+                    </td>
+                    
+                    `;
+                    rowNumber++;
+                    tableBody.appendChild(row);
+            });
+        
+        
+            // Add event listeners to the "Show more reviews" buttons
+            document.querySelectorAll('.show-more-reviews').forEach(button => {
+                button.addEventListener('click', () => {
+                    const parent = button.parentElement;
+                    parent.querySelectorAll('.more-reviews').forEach(review => {
+                        review.classList.toggle('d-none');
+                    });
+        
+                    if (button.textContent === 'Show more reviews') {
+                        button.textContent = 'Hide reviews';
+                    } else {
+                        button.textContent = 'Show more reviews';
+                    }
+                });
+            });
+        }
+
+        async function Delete(rowNumber) {
+             const url = '/deletefav';
+              console.log(rests[rowNumber])
+              fetch(url, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(rests[rowNumber])
+              }).then(response => {
+                    window.location.reload();
+                })
+                .catch(error => console.error(error));		
+        }
+</script>
+
+
+</html>
+

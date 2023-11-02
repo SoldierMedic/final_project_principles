@@ -1,0 +1,31 @@
+body{
+    background-color: #f5f5f5;
+}
+
+.text-gray {
+  color: #aaa;
+}
+
+.image-container {
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* .restaurant-image {
+    width: 200px;
+    height: auto;
+    max-height: 150px;
+    object-fit: cover;
+} */
+.review-image {
+    width: 5rem;
+    height: 5rem;
+}
+.more-reviews p {
+    margin-bottom: 1.5rem; /* Adjust this value according to your preference */
+}
+.first-review {
+    margin-bottom: 1.5rem; /* Adjust this value according to your preference */
+}
+
+
